@@ -1,0 +1,189 @@
+{% extends "layouts/main.html" %} {% from
+"govuk/components/warning-text/macro.njk" import govukWarningText %} {% from
+"govuk/components/radios/macro.njk" import govukRadios %} {% from
+"govuk/components/textarea/macro.njk" import govukTextarea %} {% from
+"govuk/components/button/macro.njk" import govukButton %} {% from
+"govuk/components/tabs/macro.njk" import govukTabs %} {% from
+"govuk/components/table/macro.njk" import govukTable %} {% block pageTitle %} {{
+supplier.name }} - Details - {{ serviceName }} {% endblock %} {% block content
+%}
+<div class="govuk-grid-row">
+  <div class="govuk-grid-column-full">
+    <a href="/suppliers/status/{{ supplier.status }}" class="govuk-back-link"
+      >Back to {{ supplier.status }} suppliers</a
+    >
+
+    <h1 class="govuk-heading-xl">
+      {{ supplier.name }}
+      <strong
+        class="govuk-tag govuk-tag--{% if supplier.status == 'approved' %}green{% else %}red{% endif %} govuk-!-margin-left-2"
+      >
+        {{ supplier.status | capitalize }}
+      </strong>
+    </h1>
+
+    {{ govukWarningText({ text: "You can update this supplier's status. All
+    changes will be logged.", iconFallbackText: "Warning" }) }} {{ govukTabs({
+    items: [ { label: "Supplier Details", id: "supplier-details", panel: { html:
+    '
+    <dl class="govuk-summary-list">
+      <div class="govuk-summary-list__row">
+        <dt class="govuk-summary-list__key">Company Name</dt>
+        <dd class="govuk-summary-list__value">' + supplier.name + '</dd>
+      </div>
+      <div class="govuk-summary-list__row">
+        <dt class="govuk-summary-list__key">Share Code</dt>
+        <dd class="govuk-summary-list__value">' + supplier.share_code + '</dd>
+      </div>
+      <div class="govuk-summary-list__row">
+        <dt class="govuk-summary-list__key">Review Date</dt>
+        <dd class="govuk-summary-list__value">
+          ' + (supplier.reviewDate | date if supplier.reviewDate else "Not
+          reviewed") + '
+        </dd>
+      </div>
+      <div class="govuk-summary-list__row">
+        <dt class="govuk-summary-list__key">Reviewed By</dt>
+        <dd class="govuk-summary-list__value">
+          ' + (supplier.reviewedBy if supplier.reviewedBy else "Not reviewed") +
+          '
+        </dd>
+      </div>
+      {% if supplier.status == "rejected" %}
+      <div class="govuk-summary-list__row">
+        <dt class="govuk-summary-list__key">Rejection Reason</dt>
+        <dd class="govuk-summary-list__value">
+          ' + supplier.rejectionReason + '
+        </dd>
+      </div>
+      {% endif %}
+    </dl>
+    ' } }, { label: "Update Status", id: "update-status", panel: { html: '
+    <form id="status-form" class="govuk-!-margin-top-6">
+      ' + govukRadios({ idPrefix: "decision", name: "decision", fieldset: {
+      legend: { text: "Update Status", isPageHeading: false, classes:
+      "govuk-fieldset__legend--m" } }, items: [ { value: "approve", text:
+      "Approve supplier", checked: supplier.status == "approved" }, { value:
+      "reject", text: "Reject supplier", checked: supplier.status == "rejected",
+      conditional: { html: govukTextarea({ name: "rejectionReason", id:
+      "rejectionReason", label: { text: "Reason for rejection" }, value:
+      supplier.rejectionReason, hint: { text: "Provide detailed explanation for
+      rejecting this supplier" } }) } } ] }) + govukButton({ text: "Update
+      Status", classes: "govuk-!-margin-top-6" }) + '
+    </form>
+    ' } }, { label: "Audit Log", id: "audit-log", panel: { html: '
+    <div id="audit-log-content">Loading audit log...</div>
+    ' } } ] }) }}
+  </div>
+</div>
+{% endblock %} {% block pageScripts %}
+<script>
+  $(document).ready(function () {
+    $("#status-form").on("submit", function (e) {
+      e.preventDefault();
+
+      const decision = $('input[name="decision"]:checked').val();
+      const rejectionReason = $("#rejectionReason").val();
+
+      if (!decision) {
+        window.location.href =
+          window.location.pathname + "?error=Please select a status";
+        return;
+      }
+
+      if (decision === "reject" && !rejectionReason) {
+        window.location.href =
+          window.location.pathname +
+          "?error=Please provide a reason for rejection";
+        return;
+      }
+
+      const submitButton = $(this).find('button[type="submit"]');
+      submitButton.attr("disabled", true);
+      submitButton.text("Updating...");
+
+      $.ajax({
+        url: "/api/suppliers/{{ supplier.id }}/decision",
+        method: "POST",
+        contentType: "application/json",
+        data: JSON.stringify({
+          decision: decision,
+          rejectionReason: rejectionReason,
+        }),
+        success: function (response) {
+          window.location.href =
+            "/suppliers/status/" +
+            decision +
+            "?success=Status updated successfully";
+        },
+        error: function (xhr, status, error) {
+          submitButton.attr("disabled", false);
+          submitButton.text("Update Status");
+          window.location.href =
+            window.location.pathname +
+            "?error=" +
+            encodeURIComponent("Error updating status. Please try again.");
+        },
+      });
+    });
+
+    // Load audit logs when the audit log tab is selected
+    $('a[href="#audit-log"]').on("click", function () {
+      loadAuditLogs();
+    });
+
+    function loadAuditLogs() {
+      $.get("/api/audit-log/supplier/{{ supplier.id }}", function (logs) {
+        if (!logs || logs.length === 0) {
+          $("#audit-log-content").html(
+            '<p class="govuk-body">No audit logs available</p>'
+          );
+          return;
+        }
+
+        const rows = logs
+          .map((log) => {
+            let details = log.details;
+            try {
+              if (typeof log.details === "string") {
+                details = JSON.parse(log.details);
+              }
+            } catch (e) {
+              details = { reason: log.details };
+            }
+
+            return `
+            <tr class="govuk-table__row">
+              <td class="govuk-table__cell">${new Date(
+                log.created_at
+              ).toLocaleString()}</td>
+              <td class="govuk-table__cell">${log.action
+                .toLowerCase()
+                .replace(/_/g, " ")}</td>
+              <td class="govuk-table__cell">${log.user_name}</td>
+              <td class="govuk-table__cell">${details.reason || "-"}</td>
+            </tr>
+          `;
+          })
+          .join("");
+
+        $("#audit-log-content").html(`
+          <table class="govuk-table">
+            <thead class="govuk-table__head">
+              <tr class="govuk-table__row">
+                <th class="govuk-table__header">Date</th>
+                <th class="govuk-table__header">Action</th>
+                <th class="govuk-table__header">User</th>
+                <th class="govuk-table__header">Details</th>
+              </tr>
+            </thead>
+            <tbody class="govuk-table__body">
+              ${rows}
+            </tbody>
+          </table>
+        `);
+      });
+    }
+  });
+</script>
+{% endblock %}

@@ -237,7 +237,20 @@ const dbHelper = {
         [supplierId],
         (err, rows) => {
           if (err) {
-            reject(err);
+            // Fallback to simpler query if JSON functions fail
+            db.all(
+              `SELECT * FROM audit_log 
+               WHERE details LIKE '%' || ? || '%'
+               ORDER BY created_at DESC`,
+              [supplierId],
+              (fallbackErr, fallbackRows) => {
+                if (fallbackErr) {
+                  resolve([]); // Return empty array on error
+                } else {
+                  resolve(fallbackRows || []);
+                }
+              }
+            );
           } else {
             resolve(rows || []);
           }
@@ -389,6 +402,154 @@ const dbHelper = {
             reject(err);
           } else {
             resolve(row.count);
+          }
+        }
+      );
+    });
+  },
+
+  // Get approved suppliers
+  getApprovedSuppliers: () => {
+    return new Promise((resolve, reject) => {
+      db.all(
+        `SELECT * FROM suppliers 
+         WHERE status = 'approved' 
+         ORDER BY reviewed_at DESC`,
+        [],
+        (err, rows) => {
+          if (err) {
+            reject(err);
+          } else {
+            const suppliers = rows.map((row) => {
+              try {
+                return {
+                  id: row.id,
+                  name: JSON.parse(row.data).identifier.legalName,
+                  share_code: row.share_code,
+                  submissionDate: row.created_at,
+                  reviewDate: row.reviewed_at,
+                  reviewedBy: row.reviewed_by,
+                  status: row.status,
+                };
+              } catch (e) {
+                console.error("Error parsing supplier data:", e);
+                return {
+                  id: row.id,
+                  name: "Unknown",
+                  share_code: row.share_code,
+                  submissionDate: row.created_at,
+                  reviewDate: row.reviewed_at,
+                  reviewedBy: row.reviewed_by,
+                  status: row.status,
+                };
+              }
+            });
+            resolve(suppliers);
+          }
+        }
+      );
+    });
+  },
+
+  // Get rejected suppliers
+  getRejectedSuppliers: () => {
+    return new Promise((resolve, reject) => {
+      db.all(
+        `SELECT * FROM suppliers 
+         WHERE status = 'rejected' 
+         ORDER BY reviewed_at DESC`,
+        [],
+        (err, rows) => {
+          if (err) {
+            reject(err);
+          } else {
+            const suppliers = rows.map((row) => {
+              try {
+                return {
+                  id: row.id,
+                  name: JSON.parse(row.data).identifier.legalName,
+                  share_code: row.share_code,
+                  submissionDate: row.created_at,
+                  reviewDate: row.reviewed_at,
+                  reviewedBy: row.reviewed_by,
+                  status: row.status,
+                  rejectionReason: row.rejection_reason,
+                };
+              } catch (e) {
+                console.error("Error parsing supplier data:", e);
+                return {
+                  id: row.id,
+                  name: "Unknown",
+                  share_code: row.share_code,
+                  submissionDate: row.created_at,
+                  reviewDate: row.reviewed_at,
+                  reviewedBy: row.reviewed_by,
+                  status: row.status,
+                  rejectionReason: row.rejection_reason,
+                };
+              }
+            });
+            resolve(suppliers);
+          }
+        }
+      );
+    });
+  },
+
+  // Get supplier details by ID (new function)
+  getSupplierDetails: (id) => {
+    return new Promise((resolve, reject) => {
+      db.get(
+        `SELECT s.*, 
+                json_extract(s.data, '$.identifier.legalName') as name,
+                json_extract(s.data, '$.supplierInformationData.form.shareCode') as share_code
+         FROM suppliers s 
+         WHERE s.id = ?`,
+        [id],
+        (err, row) => {
+          if (err) {
+            reject(err);
+          } else if (!row) {
+            resolve(null);
+          } else {
+            try {
+              // Format the response
+              const supplier = {
+                id: row.id,
+                name: row.name || "Unknown",
+                share_code: row.share_code || row.share_code,
+                status: row.status,
+                reviewDate: row.reviewed_at,
+                reviewedBy: row.reviewed_by,
+                rejectionReason: row.rejection_reason,
+                data:
+                  typeof row.data === "string"
+                    ? JSON.parse(row.data)
+                    : row.data,
+              };
+              resolve(supplier);
+            } catch (e) {
+              console.error("Error parsing supplier data:", e);
+              reject(e);
+            }
+          }
+        }
+      );
+    });
+  },
+
+  // Get supplier info (new function)
+  getSupplierInfo: (id) => {
+    return new Promise((resolve, reject) => {
+      db.get(
+        `SELECT id, share_code, status, reviewed_at, reviewed_by, rejection_reason 
+         FROM suppliers WHERE id = ?`,
+        [id],
+        (err, row) => {
+          if (err) {
+            reject(err);
+          } else {
+            resolve(row || null);
           }
         }
       );

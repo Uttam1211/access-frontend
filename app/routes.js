@@ -297,6 +297,8 @@ router.post(
 router.get("/dashboard", isAuthenticated, (req, res) => {
   res.render("dashboard.html", {
     user: req.session.user,
+    success: req.query.success,
+    error: req.query.error,
   });
 });
 
@@ -358,6 +360,162 @@ router.get("/api/system-status", isAuthenticated, async (req, res) => {
   } catch (error) {
     console.error("Error fetching system status:", error);
     res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// Get approved suppliers
+router.get(
+  "/api/suppliers/status/approved",
+  isAuthenticated,
+  async (req, res) => {
+    try {
+      const suppliers = await db.getApprovedSuppliers();
+      res.json(suppliers);
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        error: error.message,
+      });
+    }
+  }
+);
+
+// Get rejected suppliers
+router.get(
+  "/api/suppliers/status/rejected",
+  isAuthenticated,
+  async (req, res) => {
+    try {
+      const suppliers = await db.getRejectedSuppliers();
+      res.json(suppliers);
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        error: error.message,
+      });
+    }
+  }
+);
+
+// Generic status route that handles both approved and rejected
+router.get(
+  "/api/suppliers/status/:status",
+  isAuthenticated,
+  async (req, res) => {
+    try {
+      const status = req.params.status.toLowerCase();
+      if (status === "approved") {
+        const suppliers = await db.getApprovedSuppliers();
+        res.json(suppliers);
+      } else if (status === "rejected") {
+        const suppliers = await db.getRejectedSuppliers();
+        res.json(suppliers);
+      } else {
+        res.status(400).json({
+          success: false,
+          error: 'Invalid status. Must be either "approved" or "rejected"',
+        });
+      }
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        error: error.message,
+      });
+    }
+  }
+);
+
+// Supplier list routes for approved/rejected
+router.get("/suppliers/status/:status", isAuthenticated, async (req, res) => {
+  const { status } = req.params;
+
+  try {
+    // Validate status
+    if (!["approved", "rejected"].includes(status)) {
+      return res.redirect("/dashboard");
+    }
+
+    let suppliers;
+    if (status === "approved") {
+      suppliers = await db.getApprovedSuppliers();
+    } else {
+      suppliers = await db.getRejectedSuppliers();
+    }
+
+    res.render("supplier-list.html", {
+      title: `${status.charAt(0).toUpperCase() + status.slice(1)} Suppliers`,
+      suppliers,
+      status,
+      currentPage: 1,
+      hasNextPage: false,
+      pagination: null,
+    });
+  } catch (error) {
+    console.error(`Error fetching ${status} suppliers:`, error);
+    res.redirect("/dashboard");
+  }
+});
+
+// Supplier details route
+router.get("/suppliers/:id/details", isAuthenticated, async (req, res) => {
+  try {
+    const supplier = await db.getSupplier(req.params.id);
+    if (!supplier) {
+      console.log("Supplier not found:", req.params.id);
+      return res.redirect("/dashboard");
+    }
+
+    // Get additional supplier info
+    const supplierInfo = await db.getSupplierInfo(req.params.id);
+
+    // Format the data for the template
+    const formattedSupplier = {
+      id: req.params.id,
+      name: supplier.identifier?.legalName || "Unknown",
+      share_code: supplierInfo?.share_code || "N/A",
+      status: supplierInfo?.status || "pending",
+      reviewDate: supplierInfo?.reviewed_at,
+      reviewedBy: supplierInfo?.reviewed_by,
+      rejectionReason: supplierInfo?.rejection_reason,
+      data: supplier,
+    };
+
+    res.render("supplier-details.html", {
+      supplier: formattedSupplier,
+      error: req.query.error,
+      success: req.query.success,
+    });
+  } catch (error) {
+    console.error("Error fetching supplier:", error);
+    res.redirect("/dashboard");
+  }
+});
+
+// Get supplier audit logs with better error handling
+router.get("/api/audit-log/supplier/:id", isAuthenticated, async (req, res) => {
+  try {
+    const logs = await db.getSupplierAuditLogs(req.params.id);
+    res.json(
+      logs.map((log) => {
+        try {
+          return {
+            ...log,
+            details:
+              typeof log.details === "string"
+                ? JSON.parse(log.details)
+                : log.details,
+          };
+        } catch (e) {
+          return {
+            ...log,
+            details: { error: "Invalid log data" },
+          };
+        }
+      })
+    );
+  } catch (error) {
+    console.error("Error fetching supplier audit logs:", error);
+    res.status(500).json([]);
   }
 });
 

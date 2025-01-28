@@ -21,7 +21,7 @@ govukSummaryList %} {% from "govuk/components/tabs/macro.njk" import govukTabs
     a decision.", iconFallbackText: "Warning" }) }} {% set companyDetailsHtml %}
     <h2 class="govuk-heading-l">Company Details</h2>
     {{ govukSummaryList({ rows: [ { key: { text: "Share Code" }, value: { text:
-    supplier.data.supplierInformationData.form.shareCode } }, { key: { text:
+    supplier.supplierInformationData.form.shareCode } }, { key: { text:
     "Company Name" }, value: { text: supplier.identifier.legalName } }, { key: {
     text: "Company Registration Number" }, value: { text: supplier.identifier.id
     } }, { key: { text: "Company Address" }, value: { text: [

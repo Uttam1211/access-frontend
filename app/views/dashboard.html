@@ -79,12 +79,14 @@ pageTitle %} Dashboard - {{ serviceName }} {% endblock %} {% block content %}
           <a href="/add-sharecode" class="govuk-link">Add new supplier</a>
         </li>
         <li>
-          <a href="/notices/new" class="govuk-link"
-            >Create procurement notice</a
+          <a href="/suppliers/status/approved" class="govuk-link"
+            >View approved suppliers</a
           >
         </li>
         <li>
-          <a href="/reports" class="govuk-link">Generate reports</a>
+          <a href="/suppliers/status/rejected" class="govuk-link"
+            >View rejected suppliers</a
+          >
         </li>
       </ul>
     </div>
@@ -350,6 +352,77 @@ pageTitle %} Dashboard - {{ serviceName }} {% endblock %} {% block content %}
 
     // Load system status immediately
     loadSystemStatus();
+
+    // Handle approved suppliers view
+    $("#view-approved").on("click", function (e) {
+      e.preventDefault();
+      loadSuppliersByStatus("approved");
+    });
+
+    // Handle rejected suppliers view
+    $("#view-rejected").on("click", function (e) {
+      e.preventDefault();
+      loadSuppliersByStatus("rejected");
+    });
+
+    function loadSuppliersByStatus(status) {
+      $("#suppliers-table tbody").html(`
+        <tr class="govuk-table__row">
+          <td colspan="5" class="govuk-table__cell">Loading ${status} suppliers...</td>
+        </tr>
+      `);
+
+      $.get(`/api/suppliers/status/${status}`, function (suppliers) {
+        if (!suppliers || suppliers.length === 0) {
+          $("#suppliers-table tbody").html(`
+            <tr class="govuk-table__row">
+              <td colspan="5" class="govuk-table__cell">
+                <p class="govuk-body">No ${status} suppliers found</p>
+              </td>
+            </tr>
+          `);
+          return;
+        }
+
+        const rows = suppliers
+          .map(
+            (supplier) => `
+          <tr class="govuk-table__row">
+            <td class="govuk-table__cell">${supplier.name || "Unknown"}</td>
+            <td class="govuk-table__cell">${supplier.share_code || "N/A"}</td>
+            <td class="govuk-table__cell">${new Date(
+              supplier.reviewDate
+            ).toLocaleDateString()}</td>
+            <td class="govuk-table__cell">
+              <strong class="govuk-tag govuk-tag--${
+                status === "approved" ? "green" : "red"
+              }">
+                ${status.charAt(0).toUpperCase() + status.slice(1)}
+              </strong>
+            </td>
+            <td class="govuk-table__cell">
+              <a href="/suppliers/${
+                supplier.id
+              }?action=view" class="govuk-link">
+                View details
+              </a>
+            </td>
+          </tr>
+        `
+          )
+          .join("");
+
+        $("#suppliers-table tbody").html(rows);
+      }).fail(function () {
+        $("#suppliers-table tbody").html(`
+          <tr class="govuk-table__row">
+            <td colspan="5" class="govuk-table__cell">
+              <p class="govuk-body">Error loading suppliers. Please try again.</p>
+            </td>
+          </tr>
+        `);
+      });
+    }
   });
 </script>
 {% endblock %}
