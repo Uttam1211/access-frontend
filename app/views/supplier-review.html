@@ -1,212 +1,248 @@
-{% extends "layouts/main.html" %}
-
-{% from "govuk/components/button/macro.njk" import govukButton %}
-{% from "govuk/components/summary-list/macro.njk" import govukSummaryList %}
-{% from "govuk/components/tabs/macro.njk" import govukTabs %}
-{% from "govuk/components/table/macro.njk" import govukTable %}
-{% from "govuk/components/warning-text/macro.njk" import govukWarningText %}
-{% from "govuk/components/radios/macro.njk" import govukRadios %}
-{% from "govuk/components/textarea/macro.njk" import govukTextarea %}
-
-{% block pageTitle %}
-  Review Supplier - {{ supplier.name }} - {{ serviceName }}
-{% endblock %}
-
-{% block content %}
+{% extends "layouts/main.html" %} {% from "govuk/components/button/macro.njk"
+import govukButton %} {% from "govuk/components/summary-list/macro.njk" import
+govukSummaryList %} {% from "govuk/components/tabs/macro.njk" import govukTabs
+%} {% from "govuk/components/table/macro.njk" import govukTable %} {% from
+"govuk/components/warning-text/macro.njk" import govukWarningText %} {% from
+"govuk/components/radios/macro.njk" import govukRadios %} {% from
+"govuk/components/textarea/macro.njk" import govukTextarea %} {% block pageTitle
+%} Review Supplier - {{ serviceName }} {% endblock %} {% block content %}
 <div class="govuk-grid-row">
   <div class="govuk-grid-column-full">
     <a href="/dashboard" class="govuk-back-link">Back to dashboard</a>
 
     <span class="govuk-caption-xl">Supplier Review</span>
-    <h1 class="govuk-heading-xl">{{ supplier.name }}</h1>
+    <h1 class="govuk-heading-xl">
+      {% if supplier.data.supplierInformationData.form.companyName %} {{
+      supplier.data.supplierInformationData.form.companyName }} {% else %}
+      Supplier Review {% endif %}
+    </h1>
 
-    {{ govukWarningText({
-      text: "Review all information carefully before making a decision.",
-      iconFallbackText: "Warning"
+    {{ govukWarningText({ text: "Review all information carefully before making
+    a decision.", iconFallbackText: "Warning" }) }} {% set companyDetailsHtml %}
+    <h2 class="govuk-heading-l">Company Details</h2>
+    {{ govukSummaryList({ rows: [ { key: { text: "Share Code" }, value: { text:
+    supplier.data.supplierInformationData.form.shareCode } }, { key: { text:
+    "Company Name" }, value: { text: supplier.identifier.legalName } }, { key: {
+    text: "Company Registration Number" }, value: { text: supplier.identifier.id
+    } }, { key: { text: "Company Address" }, value: { text: [
+    supplier.address.streetAddress, supplier.address.locality,
+    supplier.address.postalCode, supplier.address.countryName ] | join(", ") }
+    }, { key: { text: "Contact Name" }, value: { text:
+    supplier.contactPoint.name or "Not provided" } }, { key: { text: "Contact
+    Email" }, value: { text: supplier.contactPoint.email } }, { key: { text:
+    "Contact Phone" }, value: { text: supplier.contactPoint.telephone or "Not
+    provided" } }, { key: { text: "Company URL" }, value: { text:
+    supplier.identifier.uri } } ] }) }}
+
+    <h2 class="govuk-heading-l">Financial Information</h2>
+    {{ govukSummaryList({ rows: [ { key: { text: "Company Scale" }, value: {
+    text: supplier.details.scale | title } }, { key: { text: "Registration Date"
+    }, value: { text: supplier.details.legalForm.registrationDate | date if
+    supplier.details.legalForm.registrationDate else "Not provided" } }, { key:
+    { text: "Legal Form" }, value: { text:
+    supplier.details.legalForm.registeredLegalForm } } ] }) }}
+
+    <h2 class="govuk-heading-l">Compliance & Certifications</h2>
+    {{ govukSummaryList({ rows: [ { key: { text: "ISO Certifications" }, value:
+    { text: supplier.data.supplierInformationData.form.isoCertifications } }, {
+    key: { text: "Insurance Coverage" }, value: { text: "£" +
+    supplier.data.supplierInformationData.form.insuranceCoverage } }, { key: {
+    text: "Health & Safety Policy" }, value: { text:
+    supplier.data.supplierInformationData.form.healthAndSafetyPolicy} } ] }) }}
+
+    <h2 class="govuk-heading-l">Additional Documents</h2>
+    {{ govukTable({ firstCellIsHeader: true, head: [ { text: "Document Type" },
+    { text: "Status" }, { text: "Last Updated" } ], rows: [ [ { text: "Financial
+    Statements" }, { html: '<strong class="govuk-tag govuk-tag--blue"
+      >Verified</strong
+    >' }, { text: supplier.supplierInformationData.form.submittedAt | date } ],
+    [ { text: "Company Registration" }, { html: '<strong
+      class="govuk-tag govuk-tag--blue"
+      >Verified</strong
+    >' }, { text: supplier.supplierInformationData.form.submittedAt | date } ] ]
     }) }}
 
-    {{ govukTabs({
-      items: [
-        {
-          label: "Company Information",
-          id: "company-info",
-          panel: {
-            html: '
-              <h2 class="govuk-heading-l">Company Details</h2>
-              ' + govukSummaryList({
-                rows: [
-                  {
-                    key: { text: "Company Number" },
-                    value: { text: supplier.identifier.id }
-                  },
-                  {
-                    key: { text: "Legal Name" },
-                    value: { text: supplier.identifier.legalName }
-                  },
-                  {
-                    key: { text: "Company Type" },
-                    value: { text: supplier.details.legalForm.registeredLegalForm }
-                  },
-                  {
-                    key: { text: "Registration Date" },
-                    value: { text: supplier.details.legalForm.registrationDate }
-                  },
-                  {
-                    key: { text: "Company Scale" },
-                    value: { text: supplier.details.scale | capitalize }
-                  },
-                  {
-                    key: { text: "Registered Address" },
-                    value: { html: [
-                      supplier.address.streetAddress,
-                      supplier.address.locality,
-                      supplier.address.postalCode,
-                      supplier.address.countryName
-                    ] | join("<br>") }
-                  },
-                  {
-                    key: { text: "Contact Email" },
-                    value: { text: supplier.contactPoint.email }
-                  }
-                ]
-              }) + '
-
-              <h3 class="govuk-heading-m">Additional Identifiers</h3>
-              ' + govukTable({
-                firstCellIsHeader: true,
-                head: [
-                  { text: "Scheme" },
-                  { text: "ID" },
-                  { text: "Legal Name" }
-                ],
-                rows: supplier.additionalIdentifiers | map(id => [
-                  { text: id.scheme },
-                  { text: id.id },
-                  { text: id.legalName }
-                ])
-              }) + '
-
-              <h3 class="govuk-heading-m">Additional Entities</h3>
-              ' + govukTable({
-                firstCellIsHeader: true,
-                head: [
-                  { text: "Name" },
-                  { text: "ID" }
-                ],
-                rows: supplier.additionalEntities | map(entity => [
-                  { text: entity.name },
-                  { text: entity.id }
-                ])
-              })
-          }
-        },
-        {
-          label: "Financial Information",
-          id: "financial-info",
-          panel: {
-            html: '
-              <h2 class="govuk-heading-l">Financial Documents</h2>
-              ' + govukTable({
-                firstCellIsHeader: true,
-                head: [
-                  { text: "Year End Date" },
-                  { text: "Audited" },
-                  { text: "Document" }
-                ],
-                rows: supplier.supplierInformationData.answerSets | map(set => [
-                  { text: set.answers | selectattr("questionName", "equalto", "_FinancialInformation01") | map(attribute="dateValue") | first },
-                  { text: set.answers | selectattr("questionName", "equalto", "_FinancialInformation03") | map(attribute="boolValue") | first | yesNo },
-                  { html: '<a href="' + (set.answers | selectattr("questionName", "equalto", "_FinancialInformation02") | map(attribute="documentUri") | first) + '" class="govuk-link" target="_blank">View Document</a>' }
-                ])
-              })
-          }
-        }
-      ]
-    }) }}
+    <h2 class="govuk-heading-l">Raw Data (Debug)</h2>
+    <div class="govuk-inset-text">
+      <pre class="govuk-body" style="white-space: pre-wrap">
+        {{ supplier.data | dump(2) | safe }}
+      </pre>
+    </div>
+    {% endset %} {% set auditLogHtml %}
+    <h2 class="govuk-heading-l">Audit Log</h2>
+    <div id="audit-log-container">
+      <table class="govuk-table" id="audit-log-table">
+        <thead class="govuk-table__head">
+          <tr class="govuk-table__row">
+            <th class="govuk-table__header">Date</th>
+            <th class="govuk-table__header">Action</th>
+            <th class="govuk-table__header">User</th>
+            <th class="govuk-table__header">Details</th>
+          </tr>
+        </thead>
+        <tbody class="govuk-table__body">
+          <tr class="govuk-table__row">
+            <td class="govuk-table__cell" colspan="4">Loading audit logs...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    {% endset %} {{ govukTabs({ items: [ { label: "Company Information", id:
+    "company-info", panel: { html: companyDetailsHtml } }, { label: "Audit Log",
+    id: "audit-log", panel: { html: auditLogHtml } } ] }) }}
 
     <div class="govuk-grid-row govuk-!-margin-top-9">
       <div class="govuk-grid-column-two-thirds">
-        <form id="review-form" action="/suppliers/{{ supplier.id }}/decision" method="POST">
-          {{ govukRadios({
-            idPrefix: "decision",
-            name: "decision",
-            fieldset: {
-              legend: {
-                text: "Review Decision",
-                isPageHeading: false,
-                classes: "govuk-fieldset__legend--m"
-              }
-            },
-            items: [
-              {
-                value: "approve",
-                text: "Approve supplier"
-              },
-              {
-                value: "reject",
-                text: "Reject supplier",
-                conditional: {
-                  html: govukTextarea({
-                    name: "rejection-reason",
-                    id: "rejection-reason",
-                    label: {
-                      text: "Reason for rejection"
-                    },
-                    hint: {
-                      text: "Provide detailed explanation for rejecting this supplier"
-                    }
-                  })
-                }
-              }
-            ]
-          }) }}
+        {% if error %}
+        <div class="govuk-error-summary" data-module="govuk-error-summary">
+          <div role="alert">
+            <h2 class="govuk-error-summary__title">There is a problem</h2>
+            <div class="govuk-error-summary__body">
+              <ul class="govuk-list govuk-error-summary__list">
+                <li>{{ error }}</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        {% endif %}
 
-          {{ govukButton({
-            text: "Submit Decision",
-            type: "submit"
+        <form id="review-form">
+          {{ govukRadios({ idPrefix: "decision", name: "decision", errorMessage:
+          error and { text: "Please select a decision" }, fieldset: { legend: {
+          text: "Review Decision", isPageHeading: false, classes:
+          "govuk-fieldset__legend--m" } }, items: [ { value: "approve", text:
+          "Approve supplier" }, { value: "reject", text: "Reject supplier",
+          conditional: { html: govukTextarea({ name: "rejectionReason", id:
+          "rejectionReason", label: { text: "Reason for rejection" }, hint: {
+          text: "Provide detailed explanation for rejecting this supplier" } })
+          } } ] }) }} {{ govukButton({ text: "Submit Decision", type: "submit"
           }) }}
         </form>
       </div>
     </div>
   </div>
 </div>
-{% endblock %}
-
-{% block pageScripts %}
+{% endblock %} {% block pageScripts %}
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script>
-$(document).ready(function() {
-  $('#review-form').on('submit', function(e) {
-    e.preventDefault();
-    
-    const decision = $('input[name="decision"]:checked').val();
-    const rejectionReason = $('#rejection-reason').val();
-    
-    if (decision === 'reject' && !rejectionReason) {
-      window.location.href = `/suppliers/review/${supplier.id}?error=Please provide a reason for rejection`;
-      return;
+  $(document).ready(function () {
+    $("#review-form").on("submit", function (e) {
+      e.preventDefault();
+
+      const decision = $('input[name="decision"]:checked').val();
+      const rejectionReason = $("#rejectionReason").val();
+
+      // Check if a decision has been selected
+      if (!decision) {
+        window.location.href =
+          window.location.pathname + "?error=Please select a decision";
+        return;
+      }
+
+      // Check for rejection reason if rejected
+      if (decision === "reject" && !rejectionReason) {
+        window.location.href =
+          window.location.pathname +
+          "?error=Please provide a reason for rejection";
+        return;
+      }
+
+      const submitButton = $(this).find('button[type="submit"]');
+      submitButton.attr("disabled", true);
+      submitButton.text("Submitting...");
+
+      $.ajax({
+        url: "/api/suppliers/{{ supplier.id }}/decision",
+        method: "POST",
+        contentType: "application/json",
+        data: JSON.stringify({
+          decision: decision,
+          rejectionReason: rejectionReason,
+        }),
+        success: function (response) {
+          window.location.href =
+            "/dashboard?success=Decision submitted successfully";
+        },
+        error: function (xhr, status, error) {
+          submitButton.attr("disabled", false);
+          submitButton.text("Submit Decision");
+          window.location.href =
+            window.location.pathname +
+            "?error=" +
+            encodeURIComponent("Error submitting decision. Please try again.");
+        },
+      });
+    });
+
+    // Load audit logs when the audit log tab is selected
+    $('a[href="#audit-log"]').on("click", function () {
+      loadAuditLogs();
+    });
+
+    function loadAuditLogs() {
+      $.ajax({
+        url: "/api/suppliers/{{ supplier.id }}/audit-logs",
+        method: "GET",
+        success: function (logs) {
+          updateAuditLogTable(logs);
+        },
+        error: function (xhr, status, error) {
+          $("#audit-log-table tbody").html(`
+            <tr class="govuk-table__row">
+              <td class="govuk-table__cell" colspan="4">
+                Error loading audit logs. Please try again.
+              </td>
+            </tr>
+          `);
+        },
+      });
     }
 
-    // Submit decision to backend
-    $.ajax({
-      url: $(this).attr('action'),
-      method: 'POST',
-      contentType: 'application/json',
-      data: JSON.stringify({
-        decision: decision,
-        rejectionReason: rejectionReason,
-        supplierId: '{{ supplier.id }}',
-        reviewedBy: '{{ user.name }}',
-        reviewedAt: new Date().toISOString()
-      }),
-      success: function(response) {
-        window.location.href = '/dashboard?success=Decision submitted successfully';
-      },
-      error: function(xhr, status, error) {
-        window.location.href = `/suppliers/review/${supplier.id}?error=Error submitting decision. Please try again.`;
+    function updateAuditLogTable(logs) {
+      if (!logs || logs.length === 0) {
+        $("#audit-log-table tbody").html(`
+          <tr class="govuk-table__row">
+            <td class="govuk-table__cell" colspan="4">No audit logs found</td>
+          </tr>
+        `);
+        return;
       }
-    });
+
+      const rows = logs
+        .map(
+          (log) => `
+        <tr class="govuk-table__row">
+          <td class="govuk-table__cell">
+            ${new Date(log.created_at).toLocaleString()}
+          </td>
+          <td class="govuk-table__cell">
+            ${log.action}
+          </td>
+          <td class="govuk-table__cell">
+            ${log.user_name}
+          </td>
+          <td class="govuk-table__cell">
+            ${formatDetails(log.details)}
+          </td>
+        </tr>
+      `
+        )
+        .join("");
+
+      $("#audit-log-table tbody").html(rows);
+    }
+
+    function formatDetails(details) {
+      try {
+        const parsed =
+          typeof details === "string" ? JSON.parse(details) : details;
+        return Object.entries(parsed)
+          .map(([key, value]) => `${key}: ${value}`)
+          .join("<br>");
+      } catch (e) {
+        return details;
+      }
+    }
   });
-});
 </script>
-{% endblock %} 
+{% endblock %}

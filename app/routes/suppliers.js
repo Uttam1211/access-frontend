@@ -40,6 +40,7 @@ router.use(express.json());
 // Fetch supplier data endpoint
 router.post("/api/fetch-supplier", async (req, res) => {
   try {
+    console.log("Fetching supplier data" + req.body +API_URL);
     const { sharecode } = req.body;
 
     if (!sharecode) {

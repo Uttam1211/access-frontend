@@ -1,98 +1,29 @@
-{% extends "layouts/main.html" %} {% set pageName = "Login" %} {% block content
-%}
-
+{% extends "layouts/main.html" %} {% from "govuk/components/input/macro.njk"
+import govukInput %} {% from "govuk/components/button/macro.njk" import
+govukButton %} {% from "govuk/components/error-summary/macro.njk" import
+govukErrorSummary %} {% block pageTitle %} {% if error %}Error: {% endif %}Sign
+in - {{ serviceName }} {% endblock %} {% block content %}
 <div class="govuk-grid-row">
   <div class="govuk-grid-column-two-thirds">
-    <h1 class="govuk-heading-xl">Sign in</h1>
-
     {% if error %} {{ govukErrorSummary({ titleText: "There is a problem",
     errorList: [ { text: error, href: "#email" } ] }) }} {% endif %}
 
-    <form id="login-form" action="/login" method="POST" novalidate>
+    <h1 class="govuk-heading-xl">Sign in</h1>
+
+    <form action="/login" method="POST" novalidate>
       {{ govukInput({ label: { text: "Email address", classes: "govuk-label--m"
       }, id: "email", name: "email", type: "email", autocomplete: "email",
-      spellcheck: false, errorMessage: errors.email }) }} {{ govukInput({ label:
-      { text: "Password", classes: "govuk-label--m" }, id: "password", name:
-      "password", type: "password", autocomplete: "current-password",
-      errorMessage: errors.password }) }} {{ govukButton({ text: "Sign in",
-      type: "submit" }) }}
+      spellcheck: false, errorMessage: error and { text: error } }) }} {{
+      govukInput({ label: { text: "Password", classes: "govuk-label--m" }, id:
+      "password", name: "password", type: "password", autocomplete:
+      "current-password", errorMessage: error and { text: error } }) }} {{
+      govukButton({ text: "Sign in", type: "submit" }) }}
     </form>
 
-    <h2 class="govuk-heading-m">Problems signing in?</h2>
-
-    <ul class="govuk-list">
-      <li>
-        <a href="/forgot-password" class="govuk-link">Forgot your password?</a>
-      </li>
-      <li>
-        <a href="/register" class="govuk-link">Register for an account</a>
-      </li>
-    </ul>
+    <p class="govuk-body">
+      <a href="/register" class="govuk-link">Create an account</a> if you
+      haven't already.
+    </p>
   </div>
 </div>
-
-<script>
-  document
-    .getElementById("login-form")
-    .addEventListener("submit", function (e) {
-      e.preventDefault();
-
-      const email = document.getElementById("email").value;
-      const password = document.getElementById("password").value;
-
-      // Basic email validation for local authority addresses
-      if (!email.endsWith(".gov.uk")) {
-        showError(
-          "Email must be a valid local authority email address ending in .gov.uk"
-        );
-        return;
-      }
-
-      // Simulate authentication (replace with actual API call)
-      const userData = {
-        email: email,
-        name: email.split("@")[0], // Example: extract name from email
-        role: "local-authority",
-        token: "example-jwt-token-" + Date.now(), // Replace with real JWT
-        lastLogin: new Date().toISOString(),
-      };
-
-      // Store user data in localStorage
-      localStorage.setItem("user", JSON.stringify(userData));
-
-      // Redirect to dashboard
-      window.location.href = "/dashboard";
-    });
-
-  function showError(message) {
-    const errorSummary = document.createElement("div");
-    errorSummary.className = "govuk-error-summary";
-    errorSummary.setAttribute("aria-labelledby", "error-summary-title");
-    errorSummary.setAttribute("role", "alert");
-    errorSummary.setAttribute("data-module", "govuk-error-summary");
-
-    errorSummary.innerHTML = `
-      <div class="govuk-error-summary__title" id="error-summary-title">
-        There is a problem
-      </div>
-      <div class="govuk-error-summary__body">
-        <ul class="govuk-list govuk-error-summary__list">
-          <li>${message}</li>
-        </ul>
-      </div>
-    `;
-
-    const form = document.getElementById("login-form");
-    form.parentNode.insertBefore(errorSummary, form);
-  }
-
-  // Check if user is already logged in
-  document.addEventListener("DOMContentLoaded", function () {
-    const user = localStorage.getItem("user");
-    if (user) {
-      window.location.href = "/dashboard";
-    }
-  });
-</script>
-
 {% endblock %}

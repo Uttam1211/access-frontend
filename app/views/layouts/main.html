@@ -1,6 +1,110 @@
-{#
-For guidance on how to use layouts see:
-https://prototype-kit.service.gov.uk/docs/how-to-use-layouts
-#}
+{# For guidance on how to use layouts see:
+https://prototype-kit.service.gov.uk/docs/how-to-use-layouts #} {% extends
+"govuk-prototype-kit/layouts/govuk-branded.html" %} {% block header %} {{
+govukHeader({ homepageUrl: "/", serviceName: serviceName, serviceUrl: "/",
+containerClasses: "govuk-header__container--full-width", navigation: user and [
+{ href: "/dashboard", text: "Dashboard", active: currentUrl == '/dashboard' }, {
+href: "#", text: user.fullName, active: false, attributes: { 'data-toggle':
+'account-menu' } } ], navigationClasses: "govuk-header__navigation--end" }) }}
+{% if user %}
+<div class="account-menu" id="account-menu" hidden>
+  <nav class="govuk-width-container" aria-label="Account menu">
+    <ul class="govuk-header__navigation-list">
+      <li class="govuk-header__navigation-item">
+        <span class="govuk-body-s">Signed in as</span><br />
+        <span class="govuk-body-s govuk-!-font-weight-bold"
+          >{{ user.authority }}</span
+        >
+      </li>
+      <li class="govuk-header__navigation-item">
+        <a class="govuk-header__link" href="/logout"> Sign out </a>
+      </li>
+    </ul>
+  </nav>
+</div>
+{% endif %} {% endblock %} {% block bodyEnd %} {{ super() }} {% if user %}
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const accountToggle = document.querySelector(
+      '[data-toggle="account-menu"]'
+    );
+    const accountMenu = document.getElementById("account-menu");
 
-{% extends "govuk-prototype-kit/layouts/govuk-branded.njk" %}
+    accountToggle.addEventListener("click", function (e) {
+      e.preventDefault();
+      const isHidden = accountMenu.hidden;
+      accountMenu.hidden = !isHidden;
+    });
+
+    // Close menu when clicking outside
+    document.addEventListener("click", function (e) {
+      if (
+        !accountMenu.contains(e.target) &&
+        !accountToggle.contains(e.target)
+      ) {
+        accountMenu.hidden = true;
+      }
+    });
+  });
+</script>
+<style>
+  .govuk-header__navigation--end {
+    float: right !important;
+    margin-right: 0;
+  }
+
+  .govuk-header__navigation {
+    display: block;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .account-menu {
+    position: absolute;
+    right: 0;
+    background: #ffffff;
+    border: 1px solid #b1b4b6;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    padding: 15px;
+    z-index: 100;
+    margin-top: -1px;
+  }
+
+  .account-menu .govuk-header__navigation-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .account-menu .govuk-header__navigation-item {
+    padding: 10px 0;
+    margin: 0;
+    border-bottom: 1px solid #b1b4b6;
+  }
+
+  .account-menu .govuk-header__navigation-item:last-child {
+    border-bottom: none;
+  }
+
+  .account-menu .govuk-header__link:link,
+  .account-menu .govuk-header__link:visited {
+    color: #1d70b8;
+  }
+
+  .account-menu .govuk-header__link:hover {
+    color: #003078;
+    text-decoration: underline;
+  }
+
+  .account-menu .govuk-header__link:focus {
+    color: #0b0c0c;
+  }
+
+  @media (min-width: 40.0625em) {
+    .govuk-header__navigation--end {
+      float: right !important;
+    }
+  }
+</style>
+{% endif %} {% endblock %}

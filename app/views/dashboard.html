@@ -62,11 +62,7 @@ pageTitle %} Dashboard - {{ serviceName }} {% endblock %} {% block content %}
           <h2 class="govuk-heading-m">Recent Activity</h2>
           ' + govukTable({ firstCellIsHeader: false, head: [ { text: "Date &
           Time" }, { text: "Action" }, { text: "User" }, { text: "Details" } ],
-          rows: [ [ { text: "12 Mar 2024 14:30" }, { text: "Supplier Approved"
-          }, { text: "John Smith" }, { text: "Approved Tech Solutions Ltd
-          registration" } ], [ { text: "11 Mar 2024 11:15" }, { text: "Notice
-          Published" }, { text: "Sarah Jones" }, { text: "Published
-          CDP-2024-001" } ] ] }) + '
+          rows: [] }) + '
         </div>
       </div>
     </div>
@@ -80,7 +76,7 @@ pageTitle %} Dashboard - {{ serviceName }} {% endblock %} {% block content %}
       <h2 class="govuk-heading-m">Quick Actions</h2>
       <ul class="govuk-list">
         <li>
-          <a href="/suppliers/new" class="govuk-link">Add new supplier</a>
+          <a href="/add-sharecode" class="govuk-link">Add new supplier</a>
         </li>
         <li>
           <a href="/notices/new" class="govuk-link"
@@ -104,11 +100,11 @@ pageTitle %} Dashboard - {{ serviceName }} {% endblock %} {% block content %}
         </div>
         <div class="govuk-grid-column-one-third">
           <p class="govuk-body govuk-!-font-weight-bold">Last Sync</p>
-          <p class="govuk-body">12 Mar 2024 15:00</p>
+          <p class="govuk-body" id="last-sync">Loading...</p>
         </div>
         <div class="govuk-grid-column-one-third">
           <p class="govuk-body govuk-!-font-weight-bold">Pending Tasks</p>
-          <p class="govuk-body">5</p>
+          <p class="govuk-body" id="pending-count">Loading...</p>
         </div>
       </div>
     </div>
@@ -119,6 +115,16 @@ pageTitle %} Dashboard - {{ serviceName }} {% endblock %} {% block content %}
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script>
   $(document).ready(function () {
+    // Add loading indicator
+    const loadingHtml = `
+    <tr class="govuk-table__row">
+      <td colspan="5" class="govuk-table__cell">
+        Loading suppliers...
+      </td>
+    </tr>
+  `;
+    $("#suppliers-table tbody").html(loadingHtml);
+
     // Load existing suppliers from SQLite
     loadSuppliers();
 
@@ -129,9 +135,15 @@ pageTitle %} Dashboard - {{ serviceName }} {% endblock %} {% block content %}
         success: function (suppliers) {
           updateSuppliersTable(suppliers);
         },
-        error: function () {
-          // Handle error silently - no need to show error message
-          updateSuppliersTable([]);
+        error: function (xhr, status, error) {
+          console.error("Error loading suppliers:", error);
+          $("#suppliers-table tbody").html(`
+          <tr class="govuk-table__row">
+            <td colspan="5" class="govuk-table__cell">
+              <p class="govuk-body">Error loading suppliers. Please try refreshing the page.</p>
+            </td>
+          </tr>
+        `);
         },
       });
     }
@@ -139,44 +151,205 @@ pageTitle %} Dashboard - {{ serviceName }} {% endblock %} {% block content %}
     function updateSuppliersTable(suppliers) {
       if (!suppliers || suppliers.length === 0) {
         $("#suppliers-table tbody").html(`
-          <tr class="govuk-table__row">
-            <td colspan="5" class="govuk-table__cell">
-              <p class="govuk-body">No pending suppliers</p>
-              <p class="govuk-body">
-                To get started, click "Add Share Code" above to fetch supplier information.
-              </p>
-            </td>
-          </tr>
-        `);
+        <tr class="govuk-table__row">
+          <td colspan="5" class="govuk-table__cell">
+            <p class="govuk-body">No pending suppliers</p>
+            <p class="govuk-body">
+              To get started, click "Add Share Code" above to fetch supplier information.
+            </p>
+          </td>
+        </tr>
+      `);
         return;
       }
 
       const rows = suppliers
         .map(
           (supplier) => `
-        <tr class="govuk-table__row">
-          <td class="govuk-table__cell">${supplier.name}</td>
-          <td class="govuk-table__cell">${supplier.share_code}</td>
-          <td class="govuk-table__cell">${new Date(
-            supplier.submissionDate
-          ).toLocaleDateString()}</td>
-          <td class="govuk-table__cell">
-            <strong class="govuk-tag govuk-tag--yellow">
-              Pending
-            </strong>
-          </td>
-          <td class="govuk-table__cell">
-            <a href="/suppliers/review/${supplier.id}" class="govuk-link">
-              Review
-            </a>
-          </td>
-        </tr>
-      `
+      <tr class="govuk-table__row">
+        <td class="govuk-table__cell">${supplier.name || "Unknown"}</td>
+        <td class="govuk-table__cell">${supplier.share_code || "N/A"}</td>
+        <td class="govuk-table__cell">${new Date(
+          supplier.submissionDate
+        ).toLocaleDateString()}</td>
+        <td class="govuk-table__cell">
+          <strong class="govuk-tag govuk-tag--yellow">
+            Pending
+          </strong>
+        </td>
+        <td class="govuk-table__cell">
+          <a href="/suppliers/review/${supplier.id}" class="govuk-link">
+            Review
+          </a>
+        </td>
+      </tr>
+    `
         )
         .join("");
 
       $("#suppliers-table tbody").html(rows);
     }
+
+    // Add loading indicator for audit log
+    const loadingHtmlAudit = `
+      <tr class="govuk-table__row">
+        <td colspan="4" class="govuk-table__cell">
+          Loading audit logs...
+        </td>
+      </tr>
+    `;
+    $("#audit-log table tbody").html(loadingHtmlAudit);
+
+    // Load audit logs
+    loadAuditLogs();
+
+    function loadAuditLogs() {
+      $.ajax({
+        url: "/api/audit-logs",
+        method: "GET",
+        success: function (logs) {
+          updateAuditLogTable(logs);
+        },
+        error: function (xhr, status, error) {
+          console.error("Error loading audit logs:", error);
+          $("#audit-log table tbody").html(`
+            <tr class="govuk-table__row">
+              <td colspan="4" class="govuk-table__cell">
+                <p class="govuk-body">Error loading audit logs. Please try refreshing the page.</p>
+              </td>
+            </tr>
+          `);
+        },
+      });
+    }
+
+    function updateAuditLogTable(logs) {
+      // Debug log to see what we're receiving
+      console.log("Received logs:", logs);
+
+      if (!logs || logs.length === 0) {
+        $("#audit-log table tbody").html(`
+          <tr class="govuk-table__row">
+            <td colspan="4" class="govuk-table__cell">
+              <p class="govuk-body">No audit logs available</p>
+            </td>
+          </tr>
+        `);
+        return;
+      }
+
+      const rows = logs
+        .map((log) => {
+          // Debug log for each entry
+          console.log("Processing log entry:", log);
+          console.log("Details before parsing:", log.details);
+
+          // Parse the details JSON
+          let details = log.details;
+          try {
+            if (
+              typeof log.details === "string" &&
+              log.details.startsWith("{")
+            ) {
+              details = JSON.parse(log.details);
+            }
+          } catch (e) {
+            console.error("Error parsing details:", e, log.details);
+            details = log.details;
+          }
+
+          // Debug log after parsing
+          console.log("Parsed details:", details);
+
+          // Format the action text
+          const actionText = log.action
+            .toLowerCase()
+            .replace(/_/g, " ")
+            .replace(/\b\w/g, (l) => l.toUpperCase());
+
+          // Format the details text
+          let detailsText = "";
+          if (typeof details === "object" && details.company_name) {
+            detailsText = `${details.company_name} (${details.share_code})`;
+            if (details.reason) {
+              detailsText += `<br><span class="govuk-hint govuk-!-margin-bottom-0">Reason: ${details.reason}</span>`;
+            }
+          } else {
+            // If it's not in the new format, display the original details
+            detailsText = details;
+          }
+
+          return `
+          <tr class="govuk-table__row">
+            <td class="govuk-table__cell">
+              ${new Date(log.created_at).toLocaleDateString("en-GB", {
+                day: "numeric",
+                month: "short",
+                year: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
+              })}
+            </td>
+            <td class="govuk-table__cell">
+              <strong class="govuk-tag govuk-tag--${getActionTag(log.action)}">
+                ${actionText}
+              </strong>
+            </td>
+            <td class="govuk-table__cell">${log.user_name}</td>
+            <td class="govuk-table__cell">${detailsText}</td>
+          </tr>
+        `;
+        })
+        .join("");
+
+      $("#audit-log table tbody").html(rows);
+    }
+
+    function getActionTag(action) {
+      switch (action) {
+        case "SUPPLIER_APPROVED":
+          return "green";
+        case "SUPPLIER_REJECTED":
+          return "red";
+        case "SUPPLIER_ADDED":
+          return "blue";
+        default:
+          return "grey";
+      }
+    }
+
+    // Load system status
+    function loadSystemStatus() {
+      $.ajax({
+        url: "/api/system-status",
+        method: "GET",
+        success: function (status) {
+          if (status.lastSync) {
+            $("#last-sync").text(
+              new Date(status.lastSync).toLocaleDateString("en-GB", {
+                day: "numeric",
+                month: "short",
+                year: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
+              })
+            );
+          } else {
+            $("#last-sync").text("No suppliers yet");
+          }
+
+          $("#pending-count").text(status.pendingCount || 0);
+        },
+        error: function (xhr, status, error) {
+          console.error("Error loading system status:", error);
+          $("#last-sync").text("Error loading");
+          $("#pending-count").text("Error loading");
+        },
+      });
+    }
+
+    // Load system status immediately
+    loadSystemStatus();
   });
 </script>
 {% endblock %}
