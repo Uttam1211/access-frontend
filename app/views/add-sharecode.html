@@ -1,0 +1,82 @@
+{% extends "layouts/main.html" %} {% from "govuk/components/button/macro.njk"
+import govukButton %} {% from "govuk/components/input/macro.njk" import
+govukInput %} {% from "govuk/components/error-summary/macro.njk" import
+govukErrorSummary %} {% from "govuk/components/panel/macro.njk" import
+govukPanel %} {% block pageTitle %} {% if errors %}Error: {% endif %}Add Share
+Code - {{ serviceName }} {% endblock %} {% block content %}
+<div class="govuk-grid-row">
+  <div class="govuk-grid-column-two-thirds">
+    {% if errors %} {{ govukErrorSummary({ titleText: "There is a problem",
+    errorList: [ { text: errors, href: "#sharecode" } ] }) }} {% endif %} {% if
+    success %} {{ govukPanel({ titleText: "Supplier data added successfully",
+    html: "The supplier information has been stored and is ready for review.",
+    classes: "govuk-!-margin-bottom-7" }) }} {{ govukButton({ text: "Return to
+    dashboard", href: "/dashboard", classes: "govuk-button--secondary" }) }} {%
+    else %}
+    <h1 class="govuk-heading-xl">Add Share Code</h1>
+
+    <form id="sharecode-form" action="/add-sharecode" method="POST" novalidate>
+      {{ govukInput({ label: { text: "Share Code", classes: "govuk-label--m" },
+      hint: { text: "Enter the share code provided by the supplier" }, id:
+      "sharecode", name: "sharecode", type: "text", spellcheck: false, classes:
+      "govuk-input--width-10", value: "jqGzcczw", errorMessage: errors and {
+      text: errors } }) }} {{ govukButton({ text: "Fetch supplier data", type:
+      "submit" }) }}
+
+      <p class="govuk-body">
+        <a href="/dashboard" class="govuk-link"
+          >Cancel and return to dashboard</a
+        >
+      </p>
+    </form>
+    {% endif %}
+  </div>
+</div>
+{% endblock %} {% block pageScripts %}
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script>
+  $(document).ready(function () {
+    $("#sharecode-form").on("submit", function (e) {
+      e.preventDefault();
+      const sharecode = $("#sharecode").val().trim();
+
+      if (!sharecode) {
+        window.location.href = "/add-sharecode?error=Please enter a share code";
+        return;
+      }
+
+      // Show loading state
+      const submitButton = $(this).find('button[type="submit"]');
+      submitButton.attr("disabled", true);
+      submitButton.text("Fetching data...");
+
+      // Make sure we're sending a POST request with the correct content type
+      $.ajax({
+        url: "/api/fetch-supplier",
+        method: "POST", // Explicitly set POST method
+        contentType: "application/json", // Set content type
+        data: JSON.stringify({ sharecode: sharecode }), // Properly stringify the data
+        success: function (response) {
+          if (response.success) {
+            window.location.href = "/add-sharecode?success=true";
+          } else {
+            window.location.href =
+              "/add-sharecode?error=" +
+              encodeURIComponent(response.error || "Unknown error occurred");
+          }
+        },
+        error: function (xhr) {
+          submitButton.attr("disabled", false);
+          submitButton.text("Fetch supplier data");
+          window.location.href =
+            "/add-sharecode?error=" +
+            encodeURIComponent(
+              xhr.responseJSON?.error ||
+                "Error fetching supplier data. Please try again."
+            );
+        },
+      });
+    });
+  });
+</script>
+{% endblock %}

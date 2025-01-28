@@ -1,0 +1,182 @@
+{% extends "layouts/main.html" %} {% from "govuk/components/tabs/macro.njk"
+import govukTabs %} {% from "govuk/components/table/macro.njk" import govukTable
+%} {% from "govuk/components/tag/macro.njk" import govukTag %} {% from
+"govuk/components/button/macro.njk" import govukButton %} {% from
+"govuk/components/pagination/macro.njk" import govukPagination %} {% block
+pageTitle %} Dashboard - {{ serviceName }} {% endblock %} {% block content %}
+<div class="govuk-grid-row">
+  <div class="govuk-grid-column-full">
+    <span class="govuk-caption-xl">{{ user.authority }}</span>
+    <h1 class="govuk-heading-xl">Local Authority Dashboard</h1>
+
+    {{ govukTabs({ items: [ { label: "Pending Approvals", id:
+    "pending-approvals", panel: { html: '
+    <div class="govuk-grid-row">
+      <div class="govuk-grid-column-full">
+        <div class="govuk-form-group">
+          <h2 class="govuk-heading-m">Suppliers Awaiting Approval</h2>
+          <div class="govuk-button-group govuk-!-margin-bottom-6">
+            <a
+              href="/add-sharecode"
+              role="button"
+              draggable="false"
+              class="govuk-button"
+              data-module="govuk-button"
+            >
+              Add Share Code
+            </a>
+          </div>
+          <div id="suppliers-table">
+            ' + govukTable({ firstCellIsHeader: false, head: [ { text: "Company
+            Name" }, { text: "Share Code" }, { text: "Submission Date" }, {
+            text: "Status" }, { text: "Actions" } ], rows: [] }) + '
+          </div>
+        </div>
+      </div>
+    </div>
+    ' } }, { label: "Procurement Notices", id: "procurement-notices", panel: {
+    html: '
+    <div class="govuk-grid-row">
+      <div class="govuk-grid-column-full">
+        <div class="govuk-form-group">
+          <h2 class="govuk-heading-m">Recent Procurement Notices</h2>
+          ' + govukTable({ firstCellIsHeader: false, head: [ { text: "Reference"
+          }, { text: "Title" }, { text: "Published" }, { text: "Deadline" }, {
+          text: "Status" } ], rows: [ [ { text: "CDP-2024-001" }, { html: '<a
+            href="/notices/1"
+            class="govuk-link"
+            >IT Infrastructure Upgrade</a
+          >' }, { text: "10 Mar 2024" }, { text: "10 Apr 2024" }, { html:
+          govukTag({ text: "Open", classes: "govuk-tag--blue" }) } ], [ { text:
+          "CDP-2024-002" }, { html: '<a href="/notices/2" class="govuk-link"
+            >Waste Management Services</a
+          >' }, { text: "9 Mar 2024" }, { text: "9 Apr 2024" }, { html:
+          govukTag({ text: "Open", classes: "govuk-tag--blue" }) } ] ] }) + '
+        </div>
+      </div>
+    </div>
+    ' } }, { label: "Audit Log", id: "audit-log", panel: { html: '
+    <div class="govuk-grid-row">
+      <div class="govuk-grid-column-full">
+        <div class="govuk-form-group">
+          <h2 class="govuk-heading-m">Recent Activity</h2>
+          ' + govukTable({ firstCellIsHeader: false, head: [ { text: "Date &
+          Time" }, { text: "Action" }, { text: "User" }, { text: "Details" } ],
+          rows: [ [ { text: "12 Mar 2024 14:30" }, { text: "Supplier Approved"
+          }, { text: "John Smith" }, { text: "Approved Tech Solutions Ltd
+          registration" } ], [ { text: "11 Mar 2024 11:15" }, { text: "Notice
+          Published" }, { text: "Sarah Jones" }, { text: "Published
+          CDP-2024-001" } ] ] }) + '
+        </div>
+      </div>
+    </div>
+    ' } } ] }) }}
+  </div>
+</div>
+
+<div class="govuk-grid-row govuk-!-margin-top-6">
+  <div class="govuk-grid-column-one-third">
+    <div class="app-card">
+      <h2 class="govuk-heading-m">Quick Actions</h2>
+      <ul class="govuk-list">
+        <li>
+          <a href="/suppliers/new" class="govuk-link">Add new supplier</a>
+        </li>
+        <li>
+          <a href="/notices/new" class="govuk-link"
+            >Create procurement notice</a
+          >
+        </li>
+        <li>
+          <a href="/reports" class="govuk-link">Generate reports</a>
+        </li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="govuk-grid-column-two-thirds">
+    <div class="app-card">
+      <h2 class="govuk-heading-m">System Status</h2>
+      <div class="govuk-grid-row">
+        <div class="govuk-grid-column-one-third">
+          <p class="govuk-body govuk-!-font-weight-bold">CDP Integration</p>
+          {{ govukTag({ text: "Connected", classes: "govuk-tag--green" }) }}
+        </div>
+        <div class="govuk-grid-column-one-third">
+          <p class="govuk-body govuk-!-font-weight-bold">Last Sync</p>
+          <p class="govuk-body">12 Mar 2024 15:00</p>
+        </div>
+        <div class="govuk-grid-column-one-third">
+          <p class="govuk-body govuk-!-font-weight-bold">Pending Tasks</p>
+          <p class="govuk-body">5</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %} {% block pageScripts %}
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script>
+  $(document).ready(function () {
+    // Load existing suppliers from SQLite
+    loadSuppliers();
+
+    function loadSuppliers() {
+      $.ajax({
+        url: "/api/suppliers/pending",
+        method: "GET",
+        success: function (suppliers) {
+          updateSuppliersTable(suppliers);
+        },
+        error: function () {
+          // Handle error silently - no need to show error message
+          updateSuppliersTable([]);
+        },
+      });
+    }
+
+    function updateSuppliersTable(suppliers) {
+      if (!suppliers || suppliers.length === 0) {
+        $("#suppliers-table tbody").html(`
+          <tr class="govuk-table__row">
+            <td colspan="5" class="govuk-table__cell">
+              <p class="govuk-body">No pending suppliers</p>
+              <p class="govuk-body">
+                To get started, click "Add Share Code" above to fetch supplier information.
+              </p>
+            </td>
+          </tr>
+        `);
+        return;
+      }
+
+      const rows = suppliers
+        .map(
+          (supplier) => `
+        <tr class="govuk-table__row">
+          <td class="govuk-table__cell">${supplier.name}</td>
+          <td class="govuk-table__cell">${supplier.share_code}</td>
+          <td class="govuk-table__cell">${new Date(
+            supplier.submissionDate
+          ).toLocaleDateString()}</td>
+          <td class="govuk-table__cell">
+            <strong class="govuk-tag govuk-tag--yellow">
+              Pending
+            </strong>
+          </td>
+          <td class="govuk-table__cell">
+            <a href="/suppliers/review/${supplier.id}" class="govuk-link">
+              Review
+            </a>
+          </td>
+        </tr>
+      `
+        )
+        .join("");
+
+      $("#suppliers-table tbody").html(rows);
+    }
+  });
+</script>
+{% endblock %}

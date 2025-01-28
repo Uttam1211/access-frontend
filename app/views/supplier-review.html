@@ -1,0 +1,212 @@
+{% extends "layouts/main.html" %}
+
+{% from "govuk/components/button/macro.njk" import govukButton %}
+{% from "govuk/components/summary-list/macro.njk" import govukSummaryList %}
+{% from "govuk/components/tabs/macro.njk" import govukTabs %}
+{% from "govuk/components/table/macro.njk" import govukTable %}
+{% from "govuk/components/warning-text/macro.njk" import govukWarningText %}
+{% from "govuk/components/radios/macro.njk" import govukRadios %}
+{% from "govuk/components/textarea/macro.njk" import govukTextarea %}
+
+{% block pageTitle %}
+  Review Supplier - {{ supplier.name }} - {{ serviceName }}
+{% endblock %}
+
+{% block content %}
+<div class="govuk-grid-row">
+  <div class="govuk-grid-column-full">
+    <a href="/dashboard" class="govuk-back-link">Back to dashboard</a>
+
+    <span class="govuk-caption-xl">Supplier Review</span>
+    <h1 class="govuk-heading-xl">{{ supplier.name }}</h1>
+
+    {{ govukWarningText({
+      text: "Review all information carefully before making a decision.",
+      iconFallbackText: "Warning"
+    }) }}
+
+    {{ govukTabs({
+      items: [
+        {
+          label: "Company Information",
+          id: "company-info",
+          panel: {
+            html: '
+              <h2 class="govuk-heading-l">Company Details</h2>
+              ' + govukSummaryList({
+                rows: [
+                  {
+                    key: { text: "Company Number" },
+                    value: { text: supplier.identifier.id }
+                  },
+                  {
+                    key: { text: "Legal Name" },
+                    value: { text: supplier.identifier.legalName }
+                  },
+                  {
+                    key: { text: "Company Type" },
+                    value: { text: supplier.details.legalForm.registeredLegalForm }
+                  },
+                  {
+                    key: { text: "Registration Date" },
+                    value: { text: supplier.details.legalForm.registrationDate }
+                  },
+                  {
+                    key: { text: "Company Scale" },
+                    value: { text: supplier.details.scale | capitalize }
+                  },
+                  {
+                    key: { text: "Registered Address" },
+                    value: { html: [
+                      supplier.address.streetAddress,
+                      supplier.address.locality,
+                      supplier.address.postalCode,
+                      supplier.address.countryName
+                    ] | join("<br>") }
+                  },
+                  {
+                    key: { text: "Contact Email" },
+                    value: { text: supplier.contactPoint.email }
+                  }
+                ]
+              }) + '
+
+              <h3 class="govuk-heading-m">Additional Identifiers</h3>
+              ' + govukTable({
+                firstCellIsHeader: true,
+                head: [
+                  { text: "Scheme" },
+                  { text: "ID" },
+                  { text: "Legal Name" }
+                ],
+                rows: supplier.additionalIdentifiers | map(id => [
+                  { text: id.scheme },
+                  { text: id.id },
+                  { text: id.legalName }
+                ])
+              }) + '
+
+              <h3 class="govuk-heading-m">Additional Entities</h3>
+              ' + govukTable({
+                firstCellIsHeader: true,
+                head: [
+                  { text: "Name" },
+                  { text: "ID" }
+                ],
+                rows: supplier.additionalEntities | map(entity => [
+                  { text: entity.name },
+                  { text: entity.id }
+                ])
+              })
+          }
+        },
+        {
+          label: "Financial Information",
+          id: "financial-info",
+          panel: {
+            html: '
+              <h2 class="govuk-heading-l">Financial Documents</h2>
+              ' + govukTable({
+                firstCellIsHeader: true,
+                head: [
+                  { text: "Year End Date" },
+                  { text: "Audited" },
+                  { text: "Document" }
+                ],
+                rows: supplier.supplierInformationData.answerSets | map(set => [
+                  { text: set.answers | selectattr("questionName", "equalto", "_FinancialInformation01") | map(attribute="dateValue") | first },
+                  { text: set.answers | selectattr("questionName", "equalto", "_FinancialInformation03") | map(attribute="boolValue") | first | yesNo },
+                  { html: '<a href="' + (set.answers | selectattr("questionName", "equalto", "_FinancialInformation02") | map(attribute="documentUri") | first) + '" class="govuk-link" target="_blank">View Document</a>' }
+                ])
+              })
+          }
+        }
+      ]
+    }) }}
+
+    <div class="govuk-grid-row govuk-!-margin-top-9">
+      <div class="govuk-grid-column-two-thirds">
+        <form id="review-form" action="/suppliers/{{ supplier.id }}/decision" method="POST">
+          {{ govukRadios({
+            idPrefix: "decision",
+            name: "decision",
+            fieldset: {
+              legend: {
+                text: "Review Decision",
+                isPageHeading: false,
+                classes: "govuk-fieldset__legend--m"
+              }
+            },
+            items: [
+              {
+                value: "approve",
+                text: "Approve supplier"
+              },
+              {
+                value: "reject",
+                text: "Reject supplier",
+                conditional: {
+                  html: govukTextarea({
+                    name: "rejection-reason",
+                    id: "rejection-reason",
+                    label: {
+                      text: "Reason for rejection"
+                    },
+                    hint: {
+                      text: "Provide detailed explanation for rejecting this supplier"
+                    }
+                  })
+                }
+              }
+            ]
+          }) }}
+
+          {{ govukButton({
+            text: "Submit Decision",
+            type: "submit"
+          }) }}
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block pageScripts %}
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script>
+$(document).ready(function() {
+  $('#review-form').on('submit', function(e) {
+    e.preventDefault();
+    
+    const decision = $('input[name="decision"]:checked').val();
+    const rejectionReason = $('#rejection-reason').val();
+    
+    if (decision === 'reject' && !rejectionReason) {
+      window.location.href = `/suppliers/review/${supplier.id}?error=Please provide a reason for rejection`;
+      return;
+    }
+
+    // Submit decision to backend
+    $.ajax({
+      url: $(this).attr('action'),
+      method: 'POST',
+      contentType: 'application/json',
+      data: JSON.stringify({
+        decision: decision,
+        rejectionReason: rejectionReason,
+        supplierId: '{{ supplier.id }}',
+        reviewedBy: '{{ user.name }}',
+        reviewedAt: new Date().toISOString()
+      }),
+      success: function(response) {
+        window.location.href = '/dashboard?success=Decision submitted successfully';
+      },
+      error: function(xhr, status, error) {
+        window.location.href = `/suppliers/review/${supplier.id}?error=Error submitting decision. Please try again.`;
+      }
+    });
+  });
+});
+</script>
+{% endblock %} 

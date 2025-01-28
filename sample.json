@@ -1,0 +1,200 @@
+{
+  "id": "6bdf8fae-122b-4558-8023-4e0e367c1246",
+  "name": "[Random Limited] 1",
+  "associatedPersons": [],
+  "additionalParties": [],
+  "additionalEntities": [
+    {
+      "id": "a782633e-d04e-4996-a8d0-594b32a9b3c3",
+      "name": "Hugo Ltd",
+      "roles": [],
+      "uri": null
+    },
+    {
+      "id": "222bb043-5071-469d-8356-6bfabb126158",
+      "name": "Smithery Ltd",
+      "roles": [],
+      "uri": null
+    }
+  ],
+  "identifier": {
+    "scheme": "GB-COH",
+    "id": "93939393",
+    "legalName": "[Random Limited] 1",
+    "uri": "https://find-and-update.company-information.service.gov.uk/company/93939393"
+  },
+  "additionalIdentifiers": [
+    {
+      "scheme": "GB-PPON",
+      "id": "ddbde703f5b2405f8ca30021c31f5a1e",
+      "legalName": "[Random Limited] 1",
+      "uri": "https://organisation.integration.supplier.information.findatender.codatt.net/organisations/ddbde703f5b2405f8ca30021c31f5a1e"
+    },
+    {
+      "scheme": "VAT",
+      "id": "123456789",
+      "legalName": "[Random Limited] 1",
+      "uri": null
+    }
+  ],
+  "address": {
+    "streetAddress": "Whitbread Court, Houghton Hall, Business Park, Porz Avenue",
+    "locality": "Dunstable",
+    "region": null,
+    "postalCode": "LU5 5XE",
+    "countryName": "United Kingdom",
+    "country": "GB",
+    "type": "Registered"
+  },
+  "contactPoint": {
+    "name": null,
+    "email": "info@randomlimited.co.uk",
+    "telephone": null,
+    "url": null
+  },
+  "roles": [
+    "tenderer"
+  ],
+  "details": {
+    "legalForm": {
+      "registeredUnderAct2006": true,
+      "registeredLegalForm": "LimitedCompany",
+      "lawRegistered": "Companies Act 2006",
+      "registrationDate": "2012-06-12"
+    },
+    "scale": "large",
+    "vcse": false,
+    "shelteredWorkshop": false,
+    "publicServiceMissionOrganization": false
+  },
+  "supplierInformationData": {
+    "form": {
+      "name": "Standard Questions",
+      "submissionState": "Submitted",
+      "submittedAt": "2024-09-02T10:39:40.426711+00:00",
+      "organisationId": "6bdf8fae-122b-4558-8023-4e0e367c1246",
+      "formId": "f5231eb8-6cba-444f-b938-f01c3a376a18",
+      "formVersionId": "1.0",
+      "isRequired": true,
+      "shareCode": "jqGzcczw"
+    },
+    "answerSets": [
+      {
+        "id": "71475b1f-9b40-41b8-97fb-4bb9a4f68acd",
+        "sectionName": "Financial information",
+        "answers": [
+          {
+            "questionName": "_FinancialInformation03",
+            "boolValue": true,
+            "numericValue": null,
+            "startValue": null,
+            "endValue": null,
+            "dateValue": null,
+            "textValue": null,
+            "optionValue": [],
+            "jsonValue": {},
+            "documentUri": null
+          },
+          {
+            "questionName": "_FinancialInformation02",
+            "boolValue": null,
+            "numericValue": null,
+            "startValue": null,
+            "endValue": null,
+            "dateValue": null,
+            "textValue": null,
+            "optionValue": [],
+            "jsonValue": {},
+            "documentUri": "https://data-sharing.integration.supplier.information.findatender.codatt.net/share/data/jqGzcczw/document/My_audited_accounts_20240902100843802.pdf"
+          },
+          {
+            "questionName": "_FinancialInformation01",
+            "boolValue": null,
+            "numericValue": null,
+            "startValue": null,
+            "endValue": null,
+            "dateValue": "2023-04-04",
+            "textValue": null,
+            "optionValue": [],
+            "jsonValue": {},
+            "documentUri": null
+          }
+        ]
+      },
+      {
+        "id": "252037cd-ec8c-49fb-9775-0afab72465cc",
+        "sectionName": "Financial information",
+        "answers": [
+          {
+            "questionName": "_FinancialInformation03",
+            "boolValue": true,
+            "numericValue": null,
+            "startValue": null,
+            "endValue": null,
+            "dateValue": null,
+            "textValue": null,
+            "optionValue": [],
+            "jsonValue": {},
+            "documentUri": null
+          },
+          {
+            "questionName": "_FinancialInformation02",
+            "boolValue": null,
+            "numericValue": null,
+            "startValue": null,
+            "endValue": null,
+            "dateValue": null,
+            "textValue": null,
+            "optionValue": [],
+            "jsonValue": {},
+            "documentUri": "https://data-sharing.integration.supplier.information.findatender.codatt.net/share/data/jqGzcczw/document/My_audited_accounts_20240902100952168.pdf"
+          },
+          {
+            "questionName": "_FinancialInformation01",
+            "boolValue": null,
+            "numericValue": null,
+            "startValue": null,
+            "endValue": null,
+            "dateValue": "2022-04-04",
+            "textValue": null,
+            "optionValue": [],
+            "jsonValue": {},
+            "documentUri": null
+          }
+        ]
+      }
+    ],
+    "questions": [
+      {
+        "type": "Boolean",
+        "name": "_FinancialInformation03",
+        "title": "Were your accounts audited?",
+        "text": "",
+        "isRequired": true,
+        "sectionName": "Financial information",
+        "options": [],
+        "sortOrder": 2
+      },
+      {
+        "type": "FileUpload",
+        "name": "_FinancialInformation02",
+        "title": "Upload your accounts",
+        "text": "<p class=\"govuk-body\">Upload your most recent 2 financial years. If you do not have 2, upload your most recent financial year.</p>",
+        "isRequired": true,
+        "sectionName": "Financial information",
+        "options": [],
+        "sortOrder": 3
+      },
+      {
+        "type": "Date",
+        "name": "_FinancialInformation01",
+        "title": "What is the financial year end date for the information you uploaded?",
+        "text": "",
+        "isRequired": true,
+        "sectionName": "Financial information",
+        "options": [],
+        "sortOrder": 4
+      }
+    ]
+  }
+}

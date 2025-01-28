@@ -1,0 +1,125 @@
+{% extends "layouts/main.html" %} {% set pageName = "Register" %} {% block
+content %}
+
+<div class="govuk-grid-row">
+  <div class="govuk-grid-column-two-thirds">
+    <h1 class="govuk-heading-xl">Create an account</h1>
+
+    <form id="register-form" action="/register" method="POST" novalidate>
+      {{ govukInput({ label: { text: "Full name", classes: "govuk-label--m" },
+      id: "fullName", name: "fullName", type: "text", autocomplete: "name",
+      spellcheck: false }) }} {{ govukInput({ label: { text: "Local authority
+      email address", classes: "govuk-label--m" }, hint: { text: "Must be a
+      valid @gov.uk email address" }, id: "email", name: "email", type: "email",
+      autocomplete: "email", spellcheck: false }) }} {{ govukInput({ label: {
+      text: "Local authority name", classes: "govuk-label--m" }, id:
+      "authority", name: "authority", type: "text" }) }} {{ govukInput({ label:
+      { text: "Create password", classes: "govuk-label--m" }, hint: { text:
+      "Must be at least 8 characters long and include numbers and special
+      characters" }, id: "password", name: "password", type: "password",
+      autocomplete: "new-password" }) }} {{ govukInput({ label: { text: "Confirm
+      password", classes: "govuk-label--m" }, id: "confirmPassword", name:
+      "confirmPassword", type: "password", autocomplete: "new-password" }) }} {{
+      govukCheckboxes({ name: "terms", items: [ { value: "agree", text: "I agree
+      to the terms and conditions", id: "terms" } ] }) }} {{ govukButton({ text:
+      "Create account", type: "submit" }) }}
+    </form>
+
+    <p class="govuk-body">
+      Already have an account? <a href="/login" class="govuk-link">Sign in</a>
+    </p>
+  </div>
+</div>
+
+<script>
+  document
+    .getElementById("register-form")
+    .addEventListener("submit", function (e) {
+      e.preventDefault();
+
+      const fullName = document.getElementById("fullName").value;
+      const email = document.getElementById("email").value;
+      const authority = document.getElementById("authority").value;
+      const password = document.getElementById("password").value;
+      const confirmPassword = document.getElementById("confirmPassword").value;
+      const terms = document.getElementById("terms").checked;
+
+      // Validation
+      if (!email.endsWith("@gov.uk")) {
+        showError(
+          "Email must be a valid local authority email address ending in @gov.uk"
+        );
+        return;
+      }
+
+      if (password.length < 8) {
+        showError("Password must be at least 8 characters long");
+        return;
+      }
+
+      if (password !== confirmPassword) {
+        showError("Passwords do not match");
+        return;
+      }
+
+      if (!terms) {
+        showError("You must agree to the terms and conditions");
+        return;
+      }
+
+      // Store user data
+      const userData = {
+        fullName: fullName,
+        email: email,
+        authority: authority,
+        role: "local-authority",
+        token: "example-jwt-token-" + Date.now(),
+        registered: new Date().toISOString(),
+      };
+
+      // Get existing users or create new array
+      const existingUsers = JSON.parse(
+        localStorage.getItem("registeredUsers") || "[]"
+      );
+
+      // Check if email already exists
+      if (existingUsers.some((user) => user.email === email)) {
+        showError("An account with this email already exists");
+        return;
+      }
+
+      // Add new user
+      existingUsers.push(userData);
+      localStorage.setItem("registeredUsers", JSON.stringify(existingUsers));
+
+      // Log user in
+      localStorage.setItem("user", JSON.stringify(userData));
+
+      // Redirect to dashboard
+      window.location.href = "/dashboard";
+    });
+
+  function showError(message) {
+    const errorSummary = document.createElement("div");
+    errorSummary.className = "govuk-error-summary";
+    errorSummary.setAttribute("aria-labelledby", "error-summary-title");
+    errorSummary.setAttribute("role", "alert");
+    errorSummary.setAttribute("data-module", "govuk-error-summary");
+
+    errorSummary.innerHTML = `
+      <div class="govuk-error-summary__title" id="error-summary-title">
+        There is a problem
+      </div>
+      <div class="govuk-error-summary__body">
+        <ul class="govuk-list govuk-error-summary__list">
+          <li>${message}</li>
+        </ul>
+      </div>
+    `;
+
+    const form = document.getElementById("register-form");
+    form.parentNode.insertBefore(errorSummary, form);
+  }
+</script>
+
+{% endblock %}

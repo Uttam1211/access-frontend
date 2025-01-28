@@ -1,19 +1,92 @@
-{% extends "layouts/main.html" %}
-
-{% set pageName="Home" %}
-
-{% block content %}
+{% extends "layouts/main.html" %} {% set pageName = "Home" %} {% block content
+%}
 
 <div class="govuk-grid-row">
   <div class="govuk-grid-column-two-thirds">
+    <h1 class="govuk-heading-xl">{{ serviceName }}</h1>
 
-    {% include "govuk-prototype-kit/includes/homepage-top.njk" %}
+    <p class="govuk-body-l">
+      Use this service to review and approve suppliers for public procurement
+      opportunities and manage procurement notices from the Central Digital
+      Platform (CDP).
+    </p>
 
-    <h1 class="govuk-heading-xl">
-      {{ serviceName }}
-    </h1>
+    <div class="govuk-warning-text">
+      <span class="govuk-warning-text__icon" aria-hidden="true">!</span>
+      <strong class="govuk-warning-text__text">
+        <span class="govuk-warning-text__assistive">Warning</span>
+        You need a valid local authority email address and authentication to
+        access this service.
+      </strong>
+    </div>
 
-    {% include "govuk-prototype-kit/includes/homepage-bottom.njk" %}
+    {{ govukButton({ text: "Start now", href: "/login", isStartButton: true })
+    }}
+
+    <h2 class="govuk-heading-m">Before you start</h2>
+
+    <p class="govuk-body">You can use this service to:</p>
+
+    <ul class="govuk-list govuk-list--bullet">
+      <li>review and approve supplier applications</li>
+      <li>view and manage procurement notices</li>
+      <li>track approval decisions through the audit log</li>
+      <li>ensure compliance with procurement regulations</li>
+    </ul>
+
+    <h2 class="govuk-heading-m">Related services</h2>
+
+    <ul class="govuk-list">
+      <li>
+        <a href="#" class="govuk-link">Find a Tender Service</a>
+      </li>
+      <li>
+        <a href="#" class="govuk-link">Contracts Finder</a>
+      </li>
+      <li>
+        <a href="#" class="govuk-link">Digital Marketplace</a>
+      </li>
+    </ul>
+
+    <h2 class="govuk-heading-m">Contact</h2>
+
+    <p class="govuk-body">
+      Email:
+      <a
+        href="mailto:support@lasupplierportal.service.gov.uk"
+        class="govuk-link"
+        >support@lasupplierportal.service.gov.uk</a
+      >
+    </p>
+
+    <p class="govuk-body">
+      Monday to Friday, 9am to 5pm (except public holidays)
+    </p>
+  </div>
+
+  <div class="govuk-grid-column-one-third">
+    <aside class="app-related-items" role="complementary">
+      <h2 class="govuk-heading-m">Guidance</h2>
+
+      <nav role="navigation" aria-labelledby="subsection-title">
+        <ul class="govuk-list govuk-!-font-size-16">
+          <li>
+            <a class="govuk-link" href="#">
+              Guide to supplier approval process
+            </a>
+          </li>
+          <li>
+            <a class="govuk-link" href="#"> Procurement notice requirements </a>
+          </li>
+          <li>
+            <a class="govuk-link" href="#"> Terms and conditions </a>
+          </li>
+          <li>
+            <a class="govuk-link" href="#"> Accessibility statement </a>
+          </li>
+        </ul>
+      </nav>
+    </aside>
   </div>
 </div>
 
